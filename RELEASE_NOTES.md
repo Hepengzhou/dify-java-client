@@ -1,18 +1,13 @@
 ## Changes
 
-- Add Service API for **batch document download** as ZIP (`POST /datasets/{dataset_id}/documents/download-zip`)
-  - New method on `DifyDatasetsClient`: `FilePreviewResponse downloadDocumentsAsZip(String datasetId, DocumentBatchDownloadRequest request)`
-  - Up to 100 document IDs per call; returns `application/zip` binary stream (InputStream + metadata)
-  - New model: `DocumentBatchDownloadRequest`
-- Add Service API for **single document signed download URL** (`GET /datasets/{dataset_id}/documents/{document_id}/download`)
-  - New method on `DifyDatasetsClient`: `DocumentDownloadUrlResponse getDocumentDownloadUrl(String datasetId, String documentId)`
-  - Returns a short-lived signed URL for the original uploaded file
-  - New model: `DocumentDownloadUrlResponse`
-- Add support for the **`reasoning_chunk`** streaming event (Chatflow apps with LLM node `reasoning_format=separated`)
-  - New enum: `EventType.REASONING_CHUNK`
-  - New event model: `ReasoningChunkEvent` (with nested `data`: message_id, reasoning, node_id, is_final)
-  - New callback hook on `ChatflowStreamCallback` and `WorkflowStreamCallback`: `onReasoningChunk`
-  - Enables rendering the model's chain-of-thought stream in parallel with the answer, without mixing `<think>` into the message body
+- Add Service API for **Knowledge Pipeline (RAG Pipeline)** — 4 new endpoints on `DifyDatasetsClient`
+  - `List<DatasourcePluginResponse> listPipelineDatasourcePlugins(String datasetId, Boolean isPublished)` — `GET /datasets/{id}/pipeline/datasource-plugins`
+  - `void runPipelineDatasourceNodeStream(...)` — `POST /datasets/{id}/pipeline/datasource/nodes/{node_id}/run`, SSE stream of node execution events
+  - `Map<String,Object> runPipeline(String datasetId, PipelineRunRequest request)` — `POST /datasets/{id}/pipeline/run` in **blocking** mode
+  - `void runPipelineStream(String datasetId, PipelineRunRequest request, WorkflowStreamCallback callback)` — same route in **streaming** mode
+  - `PipelineFileUploadResponse uploadPipelineFile(File file)` / `uploadPipelineFile(InputStream, String, String)` — `POST /datasets/pipeline/file-upload`
+- New models: `DatasourcePluginResponse` (with nested `CredentialInfo`), `DatasourceNodeRunRequest`, `PipelineRunRequest`, `PipelineFileUploadResponse`
+- **Internal refactor**: promoted streaming (SSE) helpers (`executeStreamRequest`, `executeGetStreamRequest`, `processStreamLine`, `LineProcessor`, `EventProcessor`) from `DefaultDifyClient` to `AbstractDifyClient`. Non-breaking; enables `DefaultDifyDatasetsClient` to consume SSE streams and simplifies future dataset streaming endpoints
 
 ## Installation
 
@@ -20,6 +15,6 @@
 <dependency>
     <groupId>io.github.imfangs</groupId>
     <artifactId>dify-java-client</artifactId>
-    <version>1.5.0</version>
+    <version>1.6.0</version>
 </dependency>
 ```
