@@ -60,6 +60,7 @@ public class DefaultDifyClient extends DifyBaseClientImpl implements DifyClient 
     private static final String WORKFLOWS_RUN_PATH = "/workflows/run";
     private static final String WORKFLOWS_TASKS_PATH = "/workflows/tasks";
     private static final String WORKFLOWS_LOGS_PATH = "/workflows/logs";
+    private static final String WORKFLOW_EVENTS_PATH = "/workflow";
 
     //标注应用相关路径
     private static final String APPS_ANNOTATIONS_PATH = "/apps/annotations";
@@ -386,6 +387,34 @@ public class DefaultDifyClient extends DifyBaseClientImpl implements DifyClient 
         return executeRequest(request, WorkflowLogsResponse.class);
     }
 
+    @Override
+    public void streamWorkflowEvents(String workflowRunId,
+                                     String user,
+                                     Boolean includeStateSnapshot,
+                                     Boolean continueOnPause,
+                                     WorkflowStreamCallback callback) throws IOException, DifyApiException {
+        if (workflowRunId == null || workflowRunId.trim().isEmpty()) {
+            throw new IllegalArgumentException("workflowRunId 不能为空");
+        }
+        if (user == null || user.trim().isEmpty()) {
+            throw new IllegalArgumentException("user 不能为空");
+        }
+        log.debug("订阅工作流事件流: workflowRunId={}, user={}, includeStateSnapshot={}, continueOnPause={}",
+                workflowRunId, user, includeStateSnapshot, continueOnPause);
+        Map<String, Object> params = new HashMap<>();
+        params.put("user", user);
+        if (includeStateSnapshot != null) {
+            params.put("include_state_snapshot", includeStateSnapshot);
+        }
+        if (continueOnPause != null) {
+            params.put("continue_on_pause", continueOnPause);
+        }
+        String url = buildUrlWithParams(WORKFLOW_EVENTS_PATH + "/" + workflowRunId.trim() + "/events", params);
+        executeGetStreamRequest(url, (line) -> processStreamLine(line, callback, WORKFLOW_TERMINAL_EVENTS, (data, eventType) -> {
+            StreamEventDispatcher.dispatchWorkflowEvent(callback, data);
+        }), callback::onException);
+    }
+
     /**
      * 执行流式请求
      *
@@ -399,7 +428,27 @@ public class DefaultDifyClient extends DifyBaseClientImpl implements DifyClient 
         RequestBody requestBody = createJsonRequestBody(body);
         Request httpRequest = new Request.Builder().url(baseUrl + path).post(requestBody).header("Authorization", "Bearer " + apiKey).header("Content-Type", "application/json").header("Accept", "text/event-stream").build();
 
-        // 执行请求并处理流式响应
+        executeStreamCall(httpRequest, lineProcessor, errorHandler);
+    }
+
+    /**
+     * 执行 GET 流式请求
+     *
+     * @param path          请求路径（含 query）
+     * @param lineProcessor 行处理器
+     * @param errorHandler  错误处理器
+     */
+    private void executeGetStreamRequest(String path, LineProcessor lineProcessor, Consumer<Exception> errorHandler) {
+        Request httpRequest = new Request.Builder()
+                .url(baseUrl + path)
+                .get()
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Accept", "text/event-stream")
+                .build();
+        executeStreamCall(httpRequest, lineProcessor, errorHandler);
+    }
+
+    private void executeStreamCall(Request httpRequest, LineProcessor lineProcessor, Consumer<Exception> errorHandler) {
         Call call = httpClient.newCall(httpRequest);
         call.enqueue(new Callback() {
             @Override
