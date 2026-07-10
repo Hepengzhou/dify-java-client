@@ -94,4 +94,36 @@ public interface ChatflowStreamCallback extends ChatStreamCallback {
      */
     default void onLoopCompleted(LoopCompletedEvent event) {
     }
+
+    /**
+     * 人工介入表单等待事件（Dify 1.14.2+）
+     *
+     * @param event 事件数据
+     */
+    default void onHumanInputRequired(HumanInputRequiredEvent event) {
+    }
+
+    /**
+     * 工作流暂停事件（Dify 1.14.2+）
+     *
+     * @param event 事件数据
+     */
+    default void onWorkflowPaused(WorkflowPausedEvent event) {
+    }
+
+    /**
+     * 人工介入表单已提交事件（Dify 1.14.2+）
+     *
+     * @param event 事件数据
+     */
+    default void onHumanInputFormFilled(HumanInputFormFilledEvent event) {
+    }
+
+    /**
+     * 人工介入表单超时事件（Dify 1.14.2+）
+     *
+     * @param event 事件数据
+     */
+    default void onHumanInputFormTimeout(HumanInputFormTimeoutEvent event) {
+    }
 }
