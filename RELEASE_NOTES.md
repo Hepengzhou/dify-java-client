@@ -1,8 +1,7 @@
 ## Changes
 
-- Optimize streaming response handling by introducing terminal event constants for different app types (#161)
-  - Chat/Completion streams now terminate on `message_end` or `error`
-  - Chatflow/Workflow streams now terminate on `workflow_finished` or `error`
-  - Fixes issue where Chatflow events after `message_end` were being lost
-- Add missing fields to `DetailedDocumentResponse`: `doc_type`, `doc_metadata`, `summary_index_status`, `need_summary` (#160)
+- Add Human Input (HITL) workflow event support for Dify 1.14.2+ (#162)
+  - New events: `human_input_required`, `workflow_paused`, `human_input_form_filled`, `human_input_form_timeout`
+  - New event models: `HumanInputRequiredEvent`, `WorkflowPausedEvent`, `HumanInputFormFilledEvent`, `HumanInputFormTimeoutEvent`
+  - New callback hooks on `WorkflowStreamCallback` and `ChatflowStreamCallback`: `onHumanInputRequired`, `onWorkflowPaused`, `onHumanInputFormFilled`, `onHumanInputFormTimeout`
 
