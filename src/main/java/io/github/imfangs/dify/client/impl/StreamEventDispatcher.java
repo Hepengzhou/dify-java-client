@@ -128,6 +128,10 @@ public class StreamEventDispatcher {
                     HumanInputFormTimeoutEvent humanInputFormTimeoutEvent = JsonUtils.fromJson(data, HumanInputFormTimeoutEvent.class);
                     callback.onHumanInputFormTimeout(humanInputFormTimeoutEvent);
                     break;
+                case REASONING_CHUNK:
+                    ReasoningChunkEvent reasoningChunkEvent = JsonUtils.fromJson(data, ReasoningChunkEvent.class);
+                    callback.onReasoningChunk(reasoningChunkEvent);
+                    break;
                 case ERROR:
                     ErrorEvent errorEvent = JsonUtils.fromJson(data, ErrorEvent.class);
                     callback.onError(errorEvent);
@@ -393,6 +397,10 @@ public class StreamEventDispatcher {
                 case HUMAN_INPUT_FORM_TIMEOUT:
                     HumanInputFormTimeoutEvent humanInputFormTimeoutEvent = JsonUtils.fromJson(data, HumanInputFormTimeoutEvent.class);
                     callback.onHumanInputFormTimeout(humanInputFormTimeoutEvent);
+                    break;
+                case REASONING_CHUNK:
+                    ReasoningChunkEvent reasoningChunkEvent = JsonUtils.fromJson(data, ReasoningChunkEvent.class);
+                    callback.onReasoningChunk(reasoningChunkEvent);
                     break;
                 case PING:
                     PingEvent pingEvent = JsonUtils.fromJson(data, PingEvent.class);

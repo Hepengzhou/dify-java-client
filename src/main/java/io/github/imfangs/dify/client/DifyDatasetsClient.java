@@ -3,6 +3,7 @@ package io.github.imfangs.dify.client;
 import io.github.imfangs.dify.client.exception.DifyApiException;
 import io.github.imfangs.dify.client.model.common.SimpleResponse;
 import io.github.imfangs.dify.client.model.datasets.*;
+import io.github.imfangs.dify.client.model.file.FilePreviewResponse;
 
 import java.io.File;
 import java.io.IOException;
@@ -538,4 +539,27 @@ public interface DifyDatasetsClient {
      * @throws DifyApiException API异常
      */
     TagListResponse getDatasetTags(String datasetId) throws IOException, DifyApiException;
+
+    /**
+     * 批量下载知识库中的文档为 ZIP 压缩包
+     * 每次最多 100 个文档；返回响应体为 application/zip 二进制流。
+     *
+     * @param datasetId 知识库 ID
+     * @param request   文档 ID 列表
+     * @return ZIP 文件响应（InputStream + 元信息）
+     * @throws IOException      IO异常
+     * @throws DifyApiException API异常
+     */
+    FilePreviewResponse downloadDocumentsAsZip(String datasetId, DocumentBatchDownloadRequest request) throws IOException, DifyApiException;
+
+    /**
+     * 获取单文档的签名下载 URL
+     *
+     * @param datasetId  知识库 ID
+     * @param documentId 文档 ID
+     * @return 含限时签名 URL 的响应
+     * @throws IOException      IO异常
+     * @throws DifyApiException API异常
+     */
+    DocumentDownloadUrlResponse getDocumentDownloadUrl(String datasetId, String documentId) throws IOException, DifyApiException;
 }

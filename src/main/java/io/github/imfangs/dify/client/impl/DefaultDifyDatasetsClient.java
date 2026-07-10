@@ -4,6 +4,7 @@ import io.github.imfangs.dify.client.DifyDatasetsClient;
 import io.github.imfangs.dify.client.exception.DifyApiException;
 import io.github.imfangs.dify.client.model.common.SimpleResponse;
 import io.github.imfangs.dify.client.model.datasets.*;
+import io.github.imfangs.dify.client.model.file.FilePreviewResponse;
 import io.github.imfangs.dify.client.util.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -552,6 +553,73 @@ public class DefaultDifyDatasetsClient extends AbstractDifyClient implements Dif
         log.debug("查询知识库已绑定的标签: datasetId={}", datasetId);
         String path = DATASETS_PATH + "/" + datasetId + TAGS_PATH;
         return executeGet(path, TagListResponse.class);
+    }
+
+    @Override
+    public FilePreviewResponse downloadDocumentsAsZip(String datasetId, DocumentBatchDownloadRequest request) throws IOException, DifyApiException {
+        if (datasetId == null || datasetId.trim().isEmpty()) {
+            throw new IllegalArgumentException("知识库 ID 不能为空");
+        }
+        if (request == null || request.getDocumentIds() == null || request.getDocumentIds().isEmpty()) {
+            throw new IllegalArgumentException("documentIds 不能为空");
+        }
+        log.debug("批量下载文档 ZIP: datasetId={}, count={}", datasetId, request.getDocumentIds().size());
+        String path = DATASETS_PATH + "/" + datasetId + DOCUMENTS_PATH + "/download-zip";
+
+        RequestBody requestBody = RequestBody.create(
+                JsonUtils.toJson(request), MediaType.parse("application/json; charset=utf-8"));
+        Request httpRequest = new Request.Builder()
+                .url(baseUrl + path)
+                .post(requestBody)
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/zip")
+                .build();
+
+        Response response = httpClient.newCall(httpRequest).execute();
+        if (!response.isSuccessful()) {
+            String errorBody = response.body() != null ? response.body().string() : "";
+            throw createApiException(response.code(), errorBody);
+        }
+        ResponseBody body = response.body();
+        if (body == null) {
+            throw new DifyApiException(500, "empty_response", "响应体为空");
+        }
+        Headers headers = response.headers();
+        Map<String, String> headerMap = new HashMap<>();
+        for (String name : headers.names()) {
+            headerMap.put(name, headers.get(name));
+        }
+        String contentDisposition = headers.get("Content-Disposition");
+        String fileName = null;
+        if (contentDisposition != null) {
+            int idx = contentDisposition.indexOf("filename=");
+            if (idx >= 0) {
+                fileName = contentDisposition.substring(idx + 9).replaceAll("\"", "").trim();
+            }
+        }
+        Long contentLength = body.contentLength() >= 0 ? body.contentLength() : null;
+        return FilePreviewResponse.builder()
+                .inputStream(body.byteStream())
+                .contentLength(contentLength)
+                .contentType(headers.get("Content-Type"))
+                .isAttachment(true)
+                .fileName(fileName)
+                .headers(headerMap)
+                .build();
+    }
+
+    @Override
+    public DocumentDownloadUrlResponse getDocumentDownloadUrl(String datasetId, String documentId) throws IOException, DifyApiException {
+        if (datasetId == null || datasetId.trim().isEmpty()) {
+            throw new IllegalArgumentException("知识库 ID 不能为空");
+        }
+        if (documentId == null || documentId.trim().isEmpty()) {
+            throw new IllegalArgumentException("文档 ID 不能为空");
+        }
+        log.debug("获取文档签名下载 URL: datasetId={}, documentId={}", datasetId, documentId);
+        String path = DATASETS_PATH + "/" + datasetId + DOCUMENTS_PATH + "/" + documentId + "/download";
+        return executeGet(path, DocumentDownloadUrlResponse.class);
     }
 
     /**

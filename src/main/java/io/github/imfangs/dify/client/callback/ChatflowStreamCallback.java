@@ -126,4 +126,13 @@ public interface ChatflowStreamCallback extends ChatStreamCallback {
      */
     default void onHumanInputFormTimeout(HumanInputFormTimeoutEvent event) {
     }
+
+    /**
+     * 收到 LLM 节点的思考（reasoning）内容增量
+     * 仅当 LLM 节点开启 reasoning_format=separated 时触发；用于与正文（message 事件）并行渲染思考流。
+     *
+     * @param event 事件数据
+     */
+    default void onReasoningChunk(ReasoningChunkEvent event) {
+    }
 }
